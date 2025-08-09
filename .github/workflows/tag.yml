@@ -1,0 +1,32 @@
+name: tagger
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version like 0.1.2'
+        required: true
+        type: string
+
+permissions:
+  contents: write   # нужно для пуша тега
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Optional: ensure version matches pyproject
+        run: |
+          python - <<'PY'
+          import tomllib, sys
+          v = tomllib.load(open("pyproject.toml","rb"))["project"]["version"]
+          target = "${{ inputs.version }}"
+          assert v == target, f"pyproject version {v} != input {target}"
+          print("Version OK:", v)
+          PY
+      - name: Create and push tag
+        run: |
+          git config user.name  "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
