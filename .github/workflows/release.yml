@@ -1,19 +1,32 @@
 name: publish
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_run:
+    workflows: ["tagger"]
+    types: [completed]
 
 permissions:
   contents: read
 
 jobs:
   build-and-publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     runs-on: ubuntu-latest
-    # если используешь окружение с правилами, раскомментируй:
-    # environment: release
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Fetch tags
+        run: |
+          git fetch --tags --force
+      - name: Derive version from pyproject (safety)
+        id: ver
+        run: |
+          python - <<'PY'
+          import tomllib,sys
+          v=tomllib.load(open("pyproject.toml","rb"))["project"]["version"]
+          print(f"::set-output name=version::{v}")
+          PY
 
       - name: Install uv
         run: pipx install uv
