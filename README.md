@@ -1,6 +1,6 @@
 # AnimaDao
 
-[![tagger](https://github.com/Absolentia/AnimaDao/actions/workflows/tag.yml/badge.svg)](https://github.com/Absolentia/AnimaDao/actions/workflows/tag.yml)
+[![tests](https://github.com/Absolentia/AnimaDao/actions/workflows/ci.yml/badge.svg)](https://github.com/Absolentia/AnimaDao/actions/workflows/ci.yml)
 
 AnimaDao is a tiny, pragmatic dependency health checker for Python projects:
 
