@@ -1,4 +1,5 @@
 name: tagger
+
 on:
   workflow_dispatch:
     inputs:
@@ -8,24 +9,31 @@ on:
         type: string
 
 permissions:
-  contents: write   # нужно для пуша тега
+  contents: write
 
 jobs:
   create-tag:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Optional: ensure version matches pyproject
+
+      - name: Optional - ensure version matches pyproject
+        shell: bash
         run: |
+          set -euo pipefail
           python - <<'PY'
-          import tomllib, sys
-          v = tomllib.load(open("pyproject.toml","rb"))["project"]["version"]
+          import pathlib, tomllib
+          data = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))
+          v = data["project"]["version"]
           target = "${{ inputs.version }}"
           assert v == target, f"pyproject version {v} != input {target}"
           print("Version OK:", v)
           PY
+
       - name: Create and push tag
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name  "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
