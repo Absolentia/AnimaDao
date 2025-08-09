@@ -1,0 +1,8 @@
+- run: pip install --upgrade pip
+- run: pip install uv
+- run: uv sync
+- run: uv run python -m build --sdist --wheel
+- env:
+    TWINE_USERNAME: __token__
+    TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+  run: uv run twine upload dist/*
