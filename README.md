@@ -1,5 +1,7 @@
 # AnimaDao
 
+[![tagger](https://github.com/Absolentia/AnimaDao/actions/workflows/tag.yml/badge.svg)](https://github.com/Absolentia/AnimaDao/actions/workflows/tag.yml)
+
 AnimaDao is a tiny, pragmatic dependency health checker for Python projects:
 
 - Reads declared deps from `pyproject.toml` (PEP 621).
