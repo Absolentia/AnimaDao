@@ -95,18 +95,28 @@ jobs:
           uv run animadao report --project . --src . --mode installed --format html --out "$REPORT_DIR/installed.html"
           echo "REPORT_DIR=$REPORT_DIR" >> "$GITHUB_ENV"
 
-      - name: Append AnimaDao report to Job Summary
+      - name: Append AnimaDao report to Job Summary (Python ${{ matrix.python-version }})
+        if: always()
         run: |
-          echo "## AnimaDao Report — declared" >> "$GITHUB_STEP_SUMMARY"
-          cat "$REPORT_DIR/declared.md" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "## AnimaDao Report — installed" >> "$GITHUB_STEP_SUMMARY"
-          cat "$REPORT_DIR/installed.md" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## AnimaDao — declared (Python ${{ matrix.python-version }})"
+            echo
+            cat "$REPORT_DIR/declared.md"
+            echo
+            echo "<details><summary>Raw JSON</summary>"
+            echo
+            echo '```json'
+            cat "$REPORT_DIR/declared.json"
+            echo '```'
+            echo "</details>"
+            echo
+            echo "---"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload AnimaDao reports artifact
         uses: actions/upload-artifact@v4
         with:
-          name: anima-reports
+          name: anima-reports-${{ matrix.python-version }}
           path: ${{ env.REPORT_DIR }}
           if-no-files-found: error
           retention-days: 7
