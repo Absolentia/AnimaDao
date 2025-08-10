@@ -9,6 +9,24 @@ on:
 permissions:
   contents: read
 
+env:
+  PY_MATRIX: >
+    {
+      "include": [
+        { "python-version": "3.8" },
+        { "python-version": "3.9" },
+        { "python-version": "3.10" },
+        { "python-version": "3.11" },
+        { "python-version": "3.12" },
+        { "python-version": "3.13" },
+        { "python-version": "3.14.0-rc.1", "allow-prereleases": true }
+      ]
+    }
+
+x-py-strategy: &py-strategy
+  fail-fast: false
+  matrix: ${{ fromJSON(env.PY_MATRIX) }}
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -17,10 +35,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14.0-rc.1"]
+    strategy: *py-strategy
     steps:
       - uses: actions/checkout@v4
 
@@ -28,6 +43,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.allow-prereleases || false }}
 
       - name: Install uv
         run: pipx install uv
@@ -48,6 +64,61 @@ jobs:
       - name: Ruff (format check)
         run: uv run ruff format --check .
 
+  anima:
+    runs-on: ubuntu-latest
+    strategy: *py-strategy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: pipx install uv
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
+
+      - name: Sync dev deps
+        run: uv sync --extra dev
+
+      # --- Reports (declared & installed) ---
+      - name: Generate AnimaDao reports
+        run: |
+          REPORT_DIR="${RUNNER_TEMP}/anima"
+          mkdir -p "$REPORT_DIR"
+          # Declared
+          uv run animadao report --project . --src . --format json --out "$REPORT_DIR/declared.json"
+          uv run animadao report --project . --src . --format md   --out "$REPORT_DIR/declared.md"
+          uv run animadao report --project . --src . --format html --out "$REPORT_DIR/declared.html"
+          # Installed
+          uv run animadao report --project . --src . --mode installed --format json --out "$REPORT_DIR/installed.json"
+          uv run animadao report --project . --src . --mode installed --format md   --out "$REPORT_DIR/installed.md"
+          uv run animadao report --project . --src . --mode installed --format html --out "$REPORT_DIR/installed.html"
+          echo "REPORT_DIR=$REPORT_DIR" >> "$GITHUB_ENV"
+
+      - name: Append AnimaDao report to Job Summary
+        run: |
+          echo "## AnimaDao Report — declared" >> "$GITHUB_STEP_SUMMARY"
+          cat "$REPORT_DIR/declared.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## AnimaDao Report — installed" >> "$GITHUB_STEP_SUMMARY"
+          cat "$REPORT_DIR/installed.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload AnimaDao reports artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: anima-reports
+          path: ${{ env.REPORT_DIR }}
+          if-no-files-found: error
+          retention-days: 7
+
+      # --- Strict gates (can fail the job) ---
       - name: AnimaDao gate (declared)
         run: |
           uv run animadao-pre-commit-gate \
@@ -56,12 +127,15 @@ jobs:
             --max-unused 0 \
             --ignore pip --ignore setuptools --ignore wheel
 
+      - name: AnimaDao gate (installed)
+        run: |
+          uv run animadao-pre-commit-gate \
+            --mode installed \
+            --fail-if-outdated
+
   test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14.0-rc.1"]
+    strategy: *py-strategy
     steps:
       - uses: actions/checkout@v4
 
