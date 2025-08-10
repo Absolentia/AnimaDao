@@ -1,0 +1,11 @@
+[core]
+mode = "declared"          # declared | installed
+src = ["src", "app"]
+
+# PyPI cache / concurrency
+pypi_ttl_seconds = 86400
+pypi_concurrency = 8
+
+[ignore]
+distributions = ["pip", "setuptools", "wheel"]
+imports = []
