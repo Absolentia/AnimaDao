@@ -43,3 +43,17 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+
+  install-from-wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install uv
+      - run: uv sync --extra dev
+      - run: uv run python -m build --sdist --wheel
+      - name: Install wheel in clean venv and smoke-test CLI
+        run: |
+          python -m venv .venv_check
+          . .venv_check/bin/activate
+          pip install dist/*.whl
+          animadao --help
