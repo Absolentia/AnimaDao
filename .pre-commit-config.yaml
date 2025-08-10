@@ -1,0 +1,21 @@
+repos:
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+      - id: ruff-format
+
+  - repo: https://github.com/Absolentia/AnimaDao
+    rev: v0.1.5
+    hooks:
+      - id: animadao-check
+        args: [--fail-if-outdated, --ignore, pip, --ignore, setuptools, --ignore, wheel]
+
+      - id: animadao-check-installed
+        args: [--fail-if-outdated]
+
+      - id: animadao-report
+        stages: [manual]
