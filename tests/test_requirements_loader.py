@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from packaging.requirements import Requirement
 from textwrap import dedent
 import json
 
