@@ -9,24 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  PY_MATRIX: >
-    {
-      "include": [
-        { "python-version": "3.8" },
-        { "python-version": "3.9" },
-        { "python-version": "3.10" },
-        { "python-version": "3.11" },
-        { "python-version": "3.12" },
-        { "python-version": "3.13" },
-        { "python-version": "3.14.0-rc.1", "allow-prereleases": true }
-      ]
-    }
-
-x-py-strategy: &py-strategy
-  fail-fast: false
-  matrix: ${{ fromJSON(env.PY_MATRIX) }}
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -35,7 +17,18 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    strategy: *py-strategy
+    strategy: &py-strategy
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.8"
+          - python-version: "3.9"
+          - python-version: "3.10"
+          - python-version: "3.11"
+          - python-version: "3.12"
+          - python-version: "3.13"
+          - python-version: "3.14.0-rc.1"
+            allow-prereleases: true
     steps:
       - uses: actions/checkout@v4
 
