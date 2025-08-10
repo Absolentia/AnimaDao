@@ -105,16 +105,35 @@ def check_cmd(
 )
 @click.option(
     "--src",
-    type=click.Path(path_type=Path, exists=True),
+    "srcs",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    multiple=True,
     default=None,
-    help="Source root to scan imports.",
+    help="Source roots to scan imports (can repeat). " "If omitted, the project root is scanned.",
 )
 @click.option("--ignore", multiple=True, help="Ignore packages (can repeat).")
-def unused_cmd(project: Path, src: Path | None, ignore: tuple[str, ...]) -> None:
+def unused_cmd(project: Path, srcs: tuple[Path, ...], ignore: tuple[str, ...]) -> None:
+    """Report declared-but-not-imported distributions.
+
+    - Accepts multiple ``--src`` occurrences; imports are unioned across roots.
+    - Falls back to the project root when ``--src`` is not provided.
+    - Ignores packages listed via ``--ignore`` (case-insensitive).
+    """
     declared = load_declared_deps_any(project).requirements
-    imports = find_top_level_imports(src or project)
+
+    # Determine roots to scan
+    roots: list[Path] = list(srcs) if srcs else [project]
+
+    # Collect imports from all roots
+    imports: set[str] = set()
+    for root in roots:
+        imports |= find_top_level_imports(root)
+
+    # Apply ignore list and keep stable ordering
     ig = {s.lower() for s in ignore}
     unused = [u for u in guess_unused(declared, imports) if u.lower() not in ig]
+    unused = sorted(unused)
+
     click.echo(json.dumps({"unused": unused}, indent=2))
 
 
