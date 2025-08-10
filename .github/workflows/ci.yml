@@ -118,7 +118,7 @@ jobs:
             --mode declared \
             --fail-if-outdated \
             --max-unused 0 \
-            --ignore pip --ignore setuptools --ignore wheel
+            --ignore pip --ignore setuptools --ignore wheel --ignore ruff
 
       - name: AnimaDao gate (installed)
         run: |

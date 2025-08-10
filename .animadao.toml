@@ -7,5 +7,5 @@ pypi_ttl_seconds = 86400
 pypi_concurrency = 8
 
 [ignore]
-distributions = ["pip", "setuptools", "wheel"]
+distributions = ["pip", "setuptools", "wheel", "ruff"]
 imports = []
