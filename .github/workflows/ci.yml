@@ -82,7 +82,7 @@ jobs:
         with:
           mode: declared
           src: "animadao tests"
-          ignore: pip,setuptools,wheel,ruff
+          ignore: pip,setuptools,wheel,ruff,build,twine,pytest-asyncio
           fail-if-outdated: "true"
           max-unused: "0"
           format: md
