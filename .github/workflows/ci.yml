@@ -81,6 +81,7 @@ jobs:
         uses: Absolentia/animadao-action@v1
         with:
           mode: declared
+          src: "anima_dao tests"
           ignore: pip,setuptools,wheel,ruff
           fail-if-outdated: "true"
           max-unused: "0"
