@@ -19,94 +19,94 @@ Works with **uv** and supports three declaration styles.
     1. `pyproject.toml` — **PEP 621** `[project].dependencies`
     2. `pyproject.toml` — **Poetry** `[tool.poetry.dependencies]`
     3. **`requirements.txt`** (incl. nested `-r` includes)
-
 - 🔍 **Import scan**: walks your source tree and extracts top-level imports (AST).
 - 🧹 **Unused deps**: declared but not imported (heuristic, import-name ≈ normalized dist name).
 - ⏫ **Outdated pins**: checks only `==`-pinned requirements against PyPI **latest**.
-- 📄 **JSON report** with summary and details.
+- ⚙️ **Two modes**: `--mode declared` (default) and `--mode installed`.
+- 🚫 **Ignore lists**: skip tool packages (e.g. `pip`, `setuptools`, `wheel`) or any custom names.
+- 🧩 **Config file**: project-level `.animadao.toml` with sane defaults and CLI overrides.
+- 🗃️ **PyPI cache**: TTL + ETag with configurable concurrency for faster checks.
+- 📄 **Reports**: `--format json | md | html`.
 
 ---
 
 ## Requirements
 
 - Python 3.10+
-- **uv** (modern asynchronous package manager for Python)
+- **uv** (modern Python package/dependency manager)
 
 ---
 
 ## Installation
 
-### Installation
-
-#### with `uv`
+### With `uv`
 
 ```bash
+pip install uv
 uv pip install anima-dao
 ```
 
-#### from `pip`
+### With `pip`
 
 ```bash
 pip install anima-dao
 ```
 
-### Installation from sources
+### From sources
 
-1. Clone the repository:
-
-    ```bash
-    git clone https://github.com/your-repository/anima-dao.git
-    cd anima-dao
-    ```
-
-2. Install `uv` – the modern Python dependency manager:
-
-    ```bash
-    pip install --upgrade pip
-    pip install uv
-    ```
-
-3. Create a virtual env:
-
-    ```bash
-    uv venv
-    ```
-
-4. Install Python dependencies with `uv`
-
-    ```bash
-    uv sync
-    ```
-   This will install dependencies listed in the `pyproject.toml` file.
-
-### Dev setup
+1) Clone:
 
 ```bash
-uv sync --extra dev
-uv run pytest
+git clone https://github.com/Absolentia/AnimaDao.git
+cd AnimaDao
+```
+
+2) Install `uv`:
+
+```bash
+pip install --upgrade pip
+pip install uv
+```
+
+3) Create a virtual env:
+
+```bash
+uv venv
+```
+
+4) Install project deps:
+
+```bash
+uv sync
 ```
 
 ---
 
-## Supported dependency sources & priority
+## Configuration
 
-When resolving declared dependencies, AnimaDao uses the first matching source:
+Create `.animadao.toml` in your project root (optional):
 
-1. `pyproject.toml` — **PEP 621** `[project].dependencies` (+ `[project.optional-dependencies]` merged)
-2. `pyproject.toml` — **Poetry** `[tool.poetry.dependencies]`
-    - `python = "^3.10"` is ignored
-    - Exact versions become `name==X.Y.Z`
-    - Caret `^` ranges are converted to PEP 440 intervals (best-effort)
-    - Poetry **dev/group** deps are **not** included
-3. `requirements.txt` — plain lines + nested includes via `-r` / `--requirement`
+```toml
+[core]
+mode = "declared"          # declared | installed
+src = ["src", "app"]       # optional, source roots for import scan
 
-> Only the **first** detected source is used to avoid mixing ecosystems.
+# PyPI cache / concurrency
+pypi_ttl_seconds = 86400   # default: 24h
+pypi_concurrency = 8       # default: 8 parallel requests
+
+[ignore]
+distributions = ["pip", "setuptools", "wheel"]
+imports = []
+```
+
+CLI flags always override config values.
 
 ---
 
-## Usage from cli
+## Usage (CLI)
 
-All commands accept a project root (where either `pyproject.toml` or `requirements.txt` resides) and optional source
+All commands accept a project root (where either `pyproject.toml` or `requirements.txt` resides) and an optional source
 root to scan imports.
 
 ### Scan: declared vs imports
@@ -115,25 +115,47 @@ root to scan imports.
 uv run animadao scan --project . --src src
 ```
 
-### Check pinned deps against PyPI
+### Check against PyPI
+
+**Declared dependencies (default mode):**
 
 ```bash
-uv run animadao check --project .
+uv run animadao check --project . --mode declared --ignore pip --ignore setuptools
+```
+
+**Installed packages in the current venv:**
+
+```bash
+uv run animadao check --project . --mode installed --pypi-ttl 43200 --pypi-concurrency 16
 ```
 
 ### Find unused deps (declared but not imported)
 
 ```bash
-uv run animadao unused --project . --src src
+uv run animadao unused --project . --src src --ignore pip --ignore wheel
 ```
 
-### Generate JSON report
+### Generate report
+
+**JSON:**
 
 ```bash
-uv run animadao report --project . --src src --out report.json
+uv run animadao report --project . --src src --out report.json --format json
 ```
 
-Output example (`report.json`):
+**Markdown:**
+
+```bash
+uv run animadao report --project . --src src --out report.md --format md
+```
+
+**HTML:**
+
+```bash
+uv run animadao report --project . --src src --out report.html --format html
+```
+
+Example `report.json`:
 
 ```json
 {
@@ -165,51 +187,26 @@ Output example (`report.json`):
     "requests",
     "json",
     "..."
-  ]
+  ],
+  "mode": "declared"
 }
 ```
 
 ---
 
-## Usage examples by ecosystem
+## Supported dependency sources & priority
 
-### PEP 621 (`pyproject.toml`)
+When resolving declared dependencies, AnimaDao uses the first matching source:
 
-```toml
-[project]
-name = "demo"
-version = "0.0.1"
-dependencies = ["requests==2.31.0", "numpy>=1.26"]
-```
+1. `pyproject.toml` — **PEP 621** `[project].dependencies` (+ `[project.optional-dependencies]` merged)
+2. `pyproject.toml` — **Poetry** `[tool.poetry.dependencies]`
+    - `python = "^3.10"` is ignored
+    - Exact versions become `name==X.Y.Z`
+    - Caret `^` ranges are converted to PEP 440 intervals (best-effort)
+    - Poetry **dev/group** deps are **not** included
+3. `requirements.txt` — plain lines + nested includes via `-r` / `--requirement`
 
-```bash
-uv run animadao report --project .
-```
-
-### Poetry (`pyproject.toml`)
-
-```toml
-[tool.poetry.dependencies]
-python = "^3.10"
-requests = "2.31.0"
-numpy = "^1.26"
-```
-
-```bash
-uv run animadao unused --project . --src pkg
-```
-
-### `requirements.txt`
-
-```
-requests==2.31.0
-numpy>=1.26
--r extra.txt
-```
-
-```bash
-uv run animadao check --project .
-```
+> Only the **first** detected source is used to avoid mixing ecosystems.
 
 ---
 
@@ -217,8 +214,10 @@ uv run animadao check --project .
 
 - **Import mapping:** compares normalized distribution names (`-` → `_`) with top-level imports. Known alias:
   `beautifulsoup4` ↔ `bs4`.
-- **Outdated policy:** **only** `==` pins are compared to PyPI latest; non-pinned specs are listed under `unpinned`.
-- **Networking:** PyPI queries via `httpx` with timeouts; tests monkeypatch network calls.
+- **Modes:**
+    - `declared`: checks only `==` pins from declarations; non-pinned specs appear under `unpinned`.
+    - `installed`: checks versions of packages currently installed in the environment.
+- **Networking:** PyPI queries via `httpx` with timeouts, using a TTL/ETag cache; failures fall back to cached data.
 
 ---
 
