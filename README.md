@@ -273,7 +273,7 @@ git push origin v0.1.1
 ```bash
 pip install uv
 uv sync --extra dev
-uv run pytest
+uv run pytest -vvvv
 ```
 
 Please keep type hints (3.10+), docstrings and comments in English, and add tests for new loaders/edge cases.
