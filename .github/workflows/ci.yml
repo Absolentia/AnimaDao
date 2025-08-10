@@ -78,7 +78,7 @@ jobs:
           key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
 
       - name: Sanity — show CLI help
-        run: uvx --from animadao animadao report --help | sed -n '1,80p'
+        run: uvx --from anima-dao animadao report --help | sed -n '1,80p'
 
       - name: AnimaDao (declared)
         uses: Absolentia/animadao-action@v1
