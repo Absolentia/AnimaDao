@@ -1,0 +1,33 @@
+- id: animadao-check
+  name: AnimaDao check (declared)
+  description: Fail commit if outdated pins (and optional unused) are detected.
+  entry: animadao-pre-commit-gate
+  language: python
+  pass_filenames: false
+  types: [python]
+  args: [
+    "--mode", "declared",
+    "--fail-if-outdated",
+    "--max-unused", "0"
+  ]
+
+- id: animadao-check-installed
+  name: AnimaDao check (installed)
+  description: Fail commit if installed packages are outdated vs PyPI.
+  entry: animadao-pre-commit-gate
+  language: python
+  pass_filenames: false
+  types: [python]
+  args: [
+    "--mode", "installed",
+    "--fail-if-outdated"
+  ]
+
+- id: animadao-report
+  name: AnimaDao report (markdown)
+  description: Print dependency health summary as Markdown (does not fail).
+  entry: animadao
+  language: python
+  pass_filenames: false
+  types: [python]
+  args: ["report", "--format", "md"]
