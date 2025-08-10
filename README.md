@@ -13,6 +13,10 @@ Works with **uv** and supports three declaration styles.
 
 ---
 
+## Action
+
+https://github.com/Absolentia/animadao-action
+
 ## Features
 
 - 🗂 **Multiple sources** of declared deps:
@@ -287,10 +291,10 @@ repos:
     rev: v0.1.2        # <-- use the latest tag
     hooks:
       - id: animadao-check
-        args: [--ignore, pip, --ignore, setuptools]
+        args: [ --ignore, pip, --ignore, setuptools ]
         files: '^(pyproject.toml|requirements.*txt|.*\.py)$'
       - id: animadao-report
-        stages: [manual]  # optional: run on-demand via `pre-commit run -a animadao-report`
+        stages: [ manual ]  # optional: run on-demand via `pre-commit run -a animadao-report`
 ```
 
 2) Install and run:
@@ -302,6 +306,7 @@ pre-commit run -a
 ```
 
 **Policy examples:**
+
 - Fail on outdated pins only:
   ```yaml
   - id: animadao-check
@@ -317,4 +322,5 @@ pre-commit run -a
   - id: animadao-check-installed
     args: [--fail-if-outdated]
   ```
+
 ```
