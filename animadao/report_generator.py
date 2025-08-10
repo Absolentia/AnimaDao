@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import asdict
 from pathlib import Path
-from typing import Optional, Iterable
 
 from packaging.requirements import Requirement
 
-from .dependency_checker import load_declared_deps_any, guess_unused
-from .import_scanner import find_top_level_imports
-from .version_checker import VersionChecker
+from animadao.dependency_checker import guess_unused, load_declared_deps_any
+from animadao.import_scanner import find_top_level_imports
+from animadao.version_checker import VersionChecker
 
 
 def _apply_ignore(names: Iterable[str], ignore: set[str] | None) -> list[str]:
@@ -22,9 +22,15 @@ def _apply_ignore(names: Iterable[str], ignore: set[str] | None) -> list[str]:
 def _render_md(data: dict) -> str:
     lines: list[str] = []
     s = data["summary"]
-    lines.append(f"# AnimaDao report\n")
-    lines.append(
-        f"**declared:** {s['declared']}  \n**imports:** {s['imports_found']}  \n**outdated:** {s['outdated']}  \n**unpinned:** {s['unpinned']}  \n**unused:** {s['unused']}\n")
+    lines.append("# AnimaDao report\n")
+    summary = (
+        f"**declared:** {s['declared']}  \n"
+        f"**imports:** {s['imports_found']}  \n"
+        f"**outdated:** {s['outdated']}  \n"
+        f"**unpinned:** {s['unpinned']}  \n"
+        f"**unused:** {s['unused']}\n"
+    )
+    lines.append(summary)
     if data["outdated"]:
         lines.append("## Outdated\n\n| package | current | latest |\n|---|---:|---:|")
         for o in data["outdated"]:
@@ -48,11 +54,19 @@ def _render_html(data: dict) -> str:
 
     s = data["summary"]
     parts = [
-        "<!DOCTYPE html><html><head><meta charset='utf-8'><title>AnimaDao report</title>"
-        "<style>body{font-family:system-ui,monospace;padding:20px} table{border-collapse:collapse} td,th{border:1px solid #ddd;padding:6px 10px}</style>"
+        "<!DOCTYPE html><html><head><meta charset='utf-8'><title>AnimaDao report</title>",
+        (
+            "<style>"
+            "body{font-family:system-ui,monospace;padding:20px}\n"
+            "table{border-collapse:collapse}\n"
+            "td,th{border:1px solid #ddd;padding:6px 10px}"
+            "</style>"
+        ),
         "</head><body>",
-        f"<h1>AnimaDao report</h1>",
-        f"<p><b>declared:</b> {s['declared']} &nbsp; <b>imports:</b> {s['imports_found']} &nbsp; <b>outdated:</b> {s['outdated']} &nbsp; <b>unpinned:</b> {s['unpinned']} &nbsp; <b>unused:</b> {s['unused']}</p>",
+        "<h1>AnimaDao report</h1>",
+        f"<p><b>declared:</b> {s['declared']} &nbsp; <b>imports:</b> {s['imports_found']} "
+        f"&nbsp; <b>outdated:</b> {s['outdated']} &nbsp; <b>unpinned:</b> {s['unpinned']} "
+        f"&nbsp; <b>unused:</b> {s['unused']}</p>",
     ]
     if data["outdated"]:
         rows = [[o["name"], o["current"], o["latest"]] for o in data["outdated"]]
@@ -67,15 +81,15 @@ def _render_html(data: dict) -> str:
 
 
 def generate_report(
-        project_root: Path,
-        src_root: Optional[Path] = None,
-        out_path: Optional[Path] = None,
-        *,
-        mode: str = "declared",  # declared | installed
-        ignore: set[str] | None = None,  # игнор пакетов по имени (case-insensitive)
-        ttl_seconds: int = 86400,
-        concurrency: int = 8,
-        output_format: str = "json",  # json | md | html
+    project_root: Path,
+    src_root: Path | None = None,
+    out_path: Path | None = None,
+    *,
+    mode: str = "declared",  # declared | installed
+    ignore: set[str] | None = None,  # игнор пакетов по имени (case-insensitive)
+    ttl_seconds: int = 86400,
+    concurrency: int = 8,
+    output_format: str = "json",  # json | md | html
 ) -> Path:
     """
     Генерирует отчёт (json/md/html) по выбранному режиму.
@@ -97,6 +111,7 @@ def generate_report(
     elif mode == "installed":
         # соберём установленные пакеты
         from importlib import metadata as im
+
         installed = {d.metadata["Name"]: d.version for d in im.distributions()}
         checker = VersionChecker(ttl_seconds=ttl_seconds, concurrency=concurrency)
         outdated, unpinned = checker.check_installed(installed)

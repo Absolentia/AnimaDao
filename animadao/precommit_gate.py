@@ -2,16 +2,15 @@ from __future__ import annotations
 
 import json
 import sys
-
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import click
 
-from .config import load_config
-from .dependency_checker import load_declared_deps_any, guess_unused
-from .import_scanner import find_top_level_imports
-from .version_checker import VersionChecker
+from animadao.config import load_config
+from animadao.dependency_checker import guess_unused, load_declared_deps_any
+from animadao.import_scanner import find_top_level_imports
+from animadao.version_checker import VersionChecker
 
 
 def _lower_set(items: Iterable[str] | None) -> set[str]:
@@ -19,27 +18,53 @@ def _lower_set(items: Iterable[str] | None) -> set[str]:
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
-@click.option("--project", type=click.Path(path_type=Path, exists=True, file_okay=False), default=Path("."),
-              help="Project root.")
-@click.option("--mode", type=click.Choice(["declared", "installed"]), default=None,
-              help="Check declared pins or installed packages.")
+@click.option(
+    "--project",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    default=Path("."),
+    help="Project root.",
+)
+@click.option(
+    "--mode",
+    type=click.Choice(["declared", "installed"]),
+    default=None,
+    help="Check declared pins or installed packages.",
+)
 @click.option("--ignore", multiple=True, help="Ignore packages (case-insensitive). Can repeat.")
-@click.option("--pypi-ttl", type=int, default=None, help="PyPI cache TTL seconds (default from config or 86400).")
-@click.option("--pypi-concurrency", type=int, default=None, help="Parallel PyPI requests (default from config or 8).")
+@click.option(
+    "--pypi-ttl",
+    type=int,
+    default=None,
+    help="PyPI cache TTL seconds (default from config or 86400).",
+)
+@click.option(
+    "--pypi-concurrency",
+    type=int,
+    default=None,
+    help="Parallel PyPI requests (default from config or 8).",
+)
 @click.option("--fail-if-outdated", is_flag=True, default=False, help="Fail if any outdated packages found.")
-@click.option("--fail-if-unpinned", is_flag=True, default=False,
-              help="Fail if any unpinned requirements found (declared mode).")
-@click.option("--max-unused", type=int, default=None,
-              help="Fail if count of unused declared deps exceeds this value (declared mode).")
+@click.option(
+    "--fail-if-unpinned",
+    is_flag=True,
+    default=False,
+    help="Fail if any unpinned requirements found (declared mode).",
+)
+@click.option(
+    "--max-unused",
+    type=int,
+    default=None,
+    help="Fail if count of unused declared deps exceeds this value (declared mode).",
+)
 def main(
-        project: Path,
-        mode: str | None,
-        ignore: tuple[str, ...],
-        pypi_ttl: int | None,
-        pypi_concurrency: int | None,
-        fail_if_outdated: bool,
-        fail_if_unpinned: bool,
-        max_unused: int | None,
+    project: Path,
+    mode: str | None,
+    ignore: tuple[str, ...],
+    pypi_ttl: int | None,
+    pypi_concurrency: int | None,
+    fail_if_outdated: bool,
+    fail_if_unpinned: bool,
+    max_unused: int | None,
 ) -> None:
     """
     Pre-commit gate for AnimaDao.
@@ -65,6 +90,7 @@ def main(
         unused = guess_unused(declared, imports)
     else:
         from importlib import metadata as im
+
         installed = {d.metadata["Name"]: d.version for d in im.distributions()}
         outdated, _ = checker.check_installed(installed)
 

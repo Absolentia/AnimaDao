@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 try:
     import tomllib as tomli  # Python 3.11+
@@ -15,6 +15,7 @@ from packaging.requirements import Requirement
 @dataclass(frozen=True)
 class DeclaredDeps:
     """Container for declared dependencies."""
+
     requirements: list[Requirement]
 
 
@@ -23,6 +24,7 @@ def _normalize_dist_name(name: str) -> str:
 
 
 # ---------- PEP 621 (project) ----------
+
 
 def load_declared_deps(pyproject_path: Path) -> DeclaredDeps:
     """Existing PEP 621 loader (kept for backward compatibility)."""
@@ -44,11 +46,13 @@ def load_declared_deps(pyproject_path: Path) -> DeclaredDeps:
 
 # ---------- Poetry ([tool.poetry.dependencies]) ----------
 
+
 def _caret_to_spec(ver: str) -> str:
     """
     Convert caret constraints ^X.Y.Z to PEP 440 range '>=X.Y.Z,<next' (basic).
     """
     import re
+
     parts = [int(p) for p in re.split(r"[._-]", ver) if p.isdigit()]
     while len(parts) < 3:
         parts.append(0)
@@ -116,6 +120,7 @@ def load_poetry_deps(pyproject_path: Path) -> DeclaredDeps:
 
 # ---------- requirements.txt ----------
 
+
 def _parse_requirements_file(path: Path, seen: set[Path] | None = None, depth: int = 0) -> list[str]:
     if seen is None:
         seen = set()
@@ -154,6 +159,7 @@ def load_requirements_txt(project_root: Path) -> DeclaredDeps:
 
 
 # ---------- Универсальный лоадер ----------
+
 
 def load_declared_deps_any(project_root: Path) -> DeclaredDeps:
     """

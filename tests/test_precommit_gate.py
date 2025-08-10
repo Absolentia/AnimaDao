@@ -3,11 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from textwrap import dedent
 
-from click.testing import CliRunner
-from packaging.version import Version
-
 import animadao.precommit_gate as gate
 from animadao.version_checker import VersionChecker
+from click.testing import CliRunner
+from packaging.version import Version
 
 
 def _write_pyproject(tmp: Path, body: str) -> None:
@@ -60,9 +59,7 @@ def test_gate_declared_unpinned_fails(tmp_path: Path, monkeypatch) -> None:
         """,
     )
     # avoid network: any value is fine; unpinned rule will trigger
-    monkeypatch.setattr(
-        VersionChecker, "get_latest_version", lambda self, n: Version("1.26.0"), raising=True
-    )
+    monkeypatch.setattr(VersionChecker, "get_latest_version", lambda self, n: Version("1.26.0"), raising=True)
 
     runner = CliRunner()
     res = runner.invoke(
@@ -165,9 +162,7 @@ def test_gate_installed_mode_outdated_fails(tmp_path: Path, monkeypatch) -> None
     )
 
     runner = CliRunner()
-    res = runner.invoke(
-        gate.main, ["--project", str(tmp_path), "--mode", "installed", "--fail-if-outdated"]
-    )
+    res = runner.invoke(gate.main, ["--project", str(tmp_path), "--mode", "installed", "--fail-if-outdated"])
     assert res.exit_code == 2, res.output
     assert '"outdated": 1' in res.output
     assert '"mode": "installed"' in res.output
@@ -244,9 +239,7 @@ def test_gate_config_mode_cli_override(tmp_path: Path, monkeypatch) -> None:
     )
 
     runner = CliRunner()
-    res = runner.invoke(
-        gate.main, ["--project", str(tmp_path), "--mode", "declared", "--max-unused", "0"]
-    )
+    res = runner.invoke(gate.main, ["--project", str(tmp_path), "--mode", "declared", "--max-unused", "0"])
     # Should run in declared mode (per CLI), find 1 unused (rich), fail on policy
     assert res.exit_code == 2, res.output
     assert '"mode": "declared"' in res.output

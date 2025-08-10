@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from pathlib import Path
 import json
 import sys
-from typing import Iterable
+from collections.abc import Iterable
+from pathlib import Path
 
 import click
 from packaging.requirements import Requirement
 
-from .config import load_config
-from .dependency_checker import load_declared_deps_any, guess_unused
-from .import_scanner import find_top_level_imports
-from .report_generator import generate_report
-from .version_checker import VersionChecker
+from animadao.config import load_config
+from animadao.dependency_checker import guess_unused, load_declared_deps_any
+from animadao.import_scanner import find_top_level_imports
+from animadao.report_generator import generate_report
+from animadao.version_checker import VersionChecker
 
 
 def _merge_ignore(base: set[str] | None, extra: Iterable[str] | None) -> set[str]:
@@ -22,33 +22,59 @@ def _merge_ignore(base: set[str] | None, extra: Iterable[str] | None) -> set[str
 
 
 @click.group(help="AnimaDao — dependency health checker.")
-def cli() -> None:
-    ...
+def cli() -> None: ...
 
 
 @cli.command("scan")
-@click.option("--project", type=click.Path(path_type=Path, exists=True, file_okay=False), default=Path("."),
-              help="Project root.")
-@click.option("--src", type=click.Path(path_type=Path, exists=True), default=None, help="Source root to scan imports.")
+@click.option(
+    "--project",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    default=Path("."),
+    help="Project root.",
+)
+@click.option(
+    "--src",
+    type=click.Path(path_type=Path, exists=True),
+    default=None,
+    help="Source root to scan imports.",
+)
 def scan_cmd(project: Path, src: Path | None) -> None:
     deps: list[Requirement] = load_declared_deps_any(project).requirements
     imports = find_top_level_imports(src or project)
-    click.echo(json.dumps({
-        "declared": [r.name + (str(r.specifier) if str(r.specifier) else "") for r in deps],
-        "imports": sorted(imports),
-    }, indent=2))
+    click.echo(
+        json.dumps(
+            {
+                "declared": [r.name + (str(r.specifier) if str(r.specifier) else "") for r in deps],
+                "imports": sorted(imports),
+            },
+            indent=2,
+        )
+    )
 
 
 @cli.command("check")
-@click.option("--project", type=click.Path(path_type=Path, exists=True, file_okay=False), default=Path("."),
-              help="Project root.")
-@click.option("--mode", type=click.Choice(["declared", "installed"]), default=None,
-              help="What to compare against PyPI.")
+@click.option(
+    "--project",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    default=Path("."),
+    help="Project root.",
+)
+@click.option(
+    "--mode",
+    type=click.Choice(["declared", "installed"]),
+    default=None,
+    help="What to compare against PyPI.",
+)
 @click.option("--ignore", multiple=True, help="Ignore packages (can repeat).")
 @click.option("--pypi-ttl", type=int, default=None, help="PyPI cache TTL seconds (default 86400).")
 @click.option("--pypi-concurrency", type=int, default=None, help="Parallel HTTP requests to PyPI (default 8).")
-def check_cmd(project: Path, mode: str | None, ignore: tuple[str, ...], pypi_ttl: int | None,
-              pypi_concurrency: int | None) -> None:
+def check_cmd(
+    project: Path,
+    mode: str | None,
+    ignore: tuple[str, ...],
+    pypi_ttl: int | None,
+    pypi_concurrency: int | None,
+) -> None:
     cfg = load_config(project).with_overrides(mode=mode, ignore=ignore, ttl=pypi_ttl, conc=pypi_concurrency)
 
     checker = VersionChecker(ttl_seconds=cfg.pypi_ttl_seconds, concurrency=cfg.pypi_concurrency)
@@ -57,6 +83,7 @@ def check_cmd(project: Path, mode: str | None, ignore: tuple[str, ...], pypi_ttl
         outdated, unpinned = checker.check_declared(declared)
     else:
         from importlib import metadata as im
+
         installed = {d.metadata["Name"]: d.version for d in im.distributions()}
         outdated, unpinned = checker.check_installed(installed)
 
@@ -70,9 +97,18 @@ def check_cmd(project: Path, mode: str | None, ignore: tuple[str, ...], pypi_ttl
 
 
 @cli.command("unused")
-@click.option("--project", type=click.Path(path_type=Path, exists=True, file_okay=False), default=Path("."),
-              help="Project root.")
-@click.option("--src", type=click.Path(path_type=Path, exists=True), default=None, help="Source root to scan imports.")
+@click.option(
+    "--project",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    default=Path("."),
+    help="Project root.",
+)
+@click.option(
+    "--src",
+    type=click.Path(path_type=Path, exists=True),
+    default=None,
+    help="Source root to scan imports.",
+)
 @click.option("--ignore", multiple=True, help="Ignore packages (can repeat).")
 def unused_cmd(project: Path, src: Path | None, ignore: tuple[str, ...]) -> None:
     declared = load_declared_deps_any(project).requirements
@@ -83,27 +119,47 @@ def unused_cmd(project: Path, src: Path | None, ignore: tuple[str, ...]) -> None
 
 
 @cli.command("report")
-@click.option("--project", type=click.Path(path_type=Path, exists=True, file_okay=False), default=Path("."),
-              help="Project root.")
-@click.option("--src", type=click.Path(path_type=Path, exists=True), default=None, help="Source root to scan imports.")
+@click.option(
+    "--project",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    default=Path("."),
+    help="Project root.",
+)
+@click.option(
+    "--src",
+    type=click.Path(path_type=Path, exists=True),
+    default=None,
+    help="Source root to scan imports.",
+)
 @click.option("--out", type=click.Path(path_type=Path), default=None, help="Path to write report.")
 @click.option("--mode", type=click.Choice(["declared", "installed"]), default=None, help="Report mode.")
 @click.option("--ignore", multiple=True, help="Ignore packages (can repeat).")
-@click.option("--format", "fmt", type=click.Choice(["json", "md", "html"]), default="json", help="Output format.")
+@click.option(
+    "--format",
+    "fmt",
+    type=click.Choice(["json", "md", "html"]),
+    default="json",
+    help="Output format.",
+)
 @click.option("--pypi-ttl", type=int, default=None, help="PyPI cache TTL seconds (default 86400).")
 @click.option("--pypi-concurrency", type=int, default=None, help="Parallel HTTP requests to PyPI (default 8).")
 def report_cmd(
-        project: Path,
-        src: Path | None,
-        out: Path | None,
-        mode: str | None,
-        ignore: tuple[str, ...],
-        fmt: str,
-        pypi_ttl: int | None,
-        pypi_concurrency: int | None,
+    project: Path,
+    src: Path | None,
+    out: Path | None,
+    mode: str | None,
+    ignore: tuple[str, ...],
+    fmt: str,
+    pypi_ttl: int | None,
+    pypi_concurrency: int | None,
 ) -> None:
-    cfg = load_config(project).with_overrides(mode=mode, src=[str(src)] if src else None, ignore=ignore, ttl=pypi_ttl,
-                                              conc=pypi_concurrency)
+    cfg = load_config(project).with_overrides(
+        mode=mode,
+        src=[str(src)] if src else None,
+        ignore=ignore,
+        ttl=pypi_ttl,
+        conc=pypi_concurrency,
+    )
     try:
         path = generate_report(
             project_root=project,

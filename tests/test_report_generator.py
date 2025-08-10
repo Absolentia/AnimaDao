@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from textwrap import dedent
-import json
 
 from animadao.report_generator import generate_report
 
 
 def test_report(tmp_path: Path, monkeypatch) -> None:
-    (tmp_path / "pyproject.toml").write_text(dedent("""
+    (tmp_path / "pyproject.toml").write_text(
+        dedent("""
         [project]
         name = "demo"
         version = "0.0.1"
@@ -17,7 +18,9 @@ def test_report(tmp_path: Path, monkeypatch) -> None:
           "requests==2.31.0",
           "numpy>=1.26",
         ]
-    """).strip(), encoding="utf-8")
+    """).strip(),
+        encoding="utf-8",
+    )
 
     src = tmp_path / "src"
     src.mkdir()
@@ -26,9 +29,13 @@ def test_report(tmp_path: Path, monkeypatch) -> None:
     # Avoid real network
     from animadao.version_checker import VersionChecker
     from packaging.version import Version
-    monkeypatch.setattr(VersionChecker, "get_latest_version",
-                        lambda self, n: Version("2.32.0") if n == "requests" else Version("1.26.0"),
-                        raising=True)
+
+    monkeypatch.setattr(
+        VersionChecker,
+        "get_latest_version",
+        lambda self, n: Version("2.32.0") if n == "requests" else Version("1.26.0"),
+        raising=True,
+    )
 
     out = generate_report(project_root=tmp_path, src_root=src)
     data = json.loads(out.read_text(encoding="utf-8"))

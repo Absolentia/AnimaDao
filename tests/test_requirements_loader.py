@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from textwrap import dedent
-import json
 
-from animadao.dependency_checker import load_declared_deps_any, guess_unused
+from animadao.dependency_checker import guess_unused, load_declared_deps_any
 from animadao.import_scanner import find_top_level_imports
 from animadao.report_generator import generate_report
 from animadao.version_checker import VersionChecker
@@ -13,11 +13,14 @@ from packaging.version import Version
 
 def test_requirements_txt_basic(tmp_path: Path, monkeypatch) -> None:
     # requirements.txt with pinned + unpinned
-    (tmp_path / "requirements.txt").write_text(dedent("""
+    (tmp_path / "requirements.txt").write_text(
+        dedent("""
         requests==2.31.0
         numpy>=1.26
         # comment
-    """).strip(), encoding="utf-8")
+    """).strip(),
+        encoding="utf-8",
+    )
 
     # source imports only requests
     src = tmp_path / "src"
@@ -33,9 +36,12 @@ def test_requirements_txt_basic(tmp_path: Path, monkeypatch) -> None:
     assert "numpy" in unused and "requests" not in unused
 
     # monkeypatch PyPI latest
-    monkeypatch.setattr(VersionChecker, "get_latest_version",
-                        lambda self, n: Version("2.32.0") if n == "requests" else Version("1.26.0"),
-                        raising=True)
+    monkeypatch.setattr(
+        VersionChecker,
+        "get_latest_version",
+        lambda self, n: Version("2.32.0") if n == "requests" else Version("1.26.0"),
+        raising=True,
+    )
     outdated, unpinned = VersionChecker(declared).check()
     assert any(o.name == "requests" and o.current == "2.31.0" for o in outdated)
     assert any(u.name == "numpy" for u in unpinned)

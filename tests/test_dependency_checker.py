@@ -3,12 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from textwrap import dedent
 
-from animadao.dependency_checker import load_declared_deps, guess_unused
+from animadao.dependency_checker import guess_unused, load_declared_deps
 from animadao.import_scanner import find_top_level_imports
 
 
 def write_pyproject(tmp: Path) -> None:
-    tmp.joinpath("pyproject.toml").write_text(dedent("""
+    tmp.joinpath("pyproject.toml").write_text(
+        dedent("""
         [project]
         name = "demo"
         version = "0.0.1"
@@ -17,7 +18,9 @@ def write_pyproject(tmp: Path) -> None:
           "requests==2.31.0",
           "numpy>=1.26",
         ]
-    """).strip(), encoding="utf-8")
+    """).strip(),
+        encoding="utf-8",
+    )
 
 
 def test_scan_and_unused(tmp_path: Path) -> None:

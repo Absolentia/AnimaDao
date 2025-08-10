@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 try:
     import tomllib as tomli  # 3.11+
@@ -20,18 +20,18 @@ class Config:
     pypi_concurrency: int = 8  # параллелизм запросов к PyPI
 
     def with_overrides(
-            self,
-            mode: str | None = None,
-            src: Iterable[str] | None = None,
-            ignore: Iterable[str] | None = None,
-            ttl: int | None = None,
-            conc: int | None = None,
-    ) -> "Config":
+        self,
+        mode: str | None = None,
+        src: Iterable[str] | None = None,
+        ignore: Iterable[str] | None = None,
+        ttl: int | None = None,
+        conc: int | None = None,
+    ) -> Config:
         return Config(
             mode=mode or self.mode,
             src=list(src) if src is not None else (self.src or []),
-            ignore_distributions=set((self.ignore_distributions or set())) | (
-                {s.lower() for s in ignore} if ignore else set()),
+            ignore_distributions=set(self.ignore_distributions or set())
+            | ({s.lower() for s in ignore} if ignore else set()),
             ignore_imports=self.ignore_imports or set(),
             pypi_ttl_seconds=ttl if ttl is not None else self.pypi_ttl_seconds,
             pypi_concurrency=conc if conc is not None else self.pypi_concurrency,

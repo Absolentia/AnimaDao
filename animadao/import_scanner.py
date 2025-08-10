@@ -29,9 +29,8 @@ def find_top_level_imports(src_root: Path) -> set[str]:
                     top = alias.name.split(".")[0]
                     if top:
                         imports.add(top)
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    top = node.module.split(".")[0]
-                    if top:
-                        imports.add(top)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                top = node.module.split(".")[0]
+                if top:
+                    imports.add(top)
     return imports

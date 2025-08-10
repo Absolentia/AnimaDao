@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 from textwrap import dedent
-from animadao.dependency_checker import load_declared_deps_any, guess_unused
+
+from animadao.dependency_checker import guess_unused, load_declared_deps_any
 from animadao.import_scanner import find_top_level_imports
 
 
 def test_poetry_dependencies(tmp_path: Path) -> None:
     # Minimal Poetry-style pyproject
-    (tmp_path / "pyproject.toml").write_text(dedent("""
+    (tmp_path / "pyproject.toml").write_text(
+        dedent("""
         [tool.poetry]
         name = "demo"
         version = "0.0.1"
@@ -21,7 +23,9 @@ def test_poetry_dependencies(tmp_path: Path) -> None:
 
         [tool.poetry.group.dev.dependencies]
         pytest = "^8.0"
-    """).strip(), encoding="utf-8")
+    """).strip(),
+        encoding="utf-8",
+    )
 
     src = tmp_path / "pkg"
     src.mkdir()

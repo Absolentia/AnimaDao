@@ -3,18 +3,21 @@ from __future__ import annotations
 import json
 import os
 import time
+from collections.abc import Iterable
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Iterable
 
 import httpx
 from packaging.requirements import Requirement
-from packaging.version import Version, parse as parse_version
+from packaging.version import Version
+from packaging.version import parse as parse_version
 
 
 @dataclass(frozen=True)
 class Outdated:
     """Represents a pinned requirement that is behind PyPI latest."""
+
     name: str
     current: str
     latest: str
@@ -23,6 +26,7 @@ class Outdated:
 @dataclass(frozen=True)
 class Unpinned:
     """Represents a requirement that isn't pinned with '==' (we don't check it)."""
+
     name: str
     spec: str
 
@@ -33,7 +37,7 @@ class PyPICache:
     File content: {"version": "...", "etag": "...", "ts": <epoch>}
     """
 
-    def __init__(self, ttl_seconds: int = 86400, cache_dir: Optional[Path] = None) -> None:
+    def __init__(self, ttl_seconds: int = 86400, cache_dir: Path | None = None) -> None:
         base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")).expanduser()
         self.dir = (cache_dir or (base / "animadao" / "pypi")).resolve()
         self.dir.mkdir(parents=True, exist_ok=True)
@@ -42,7 +46,7 @@ class PyPICache:
     def _path(self, name: str) -> Path:
         return self.dir / f"{name.lower()}.json"
 
-    def load(self, name: str) -> tuple[Optional[str], Optional[str], float]:
+    def load(self, name: str) -> tuple[str | None, str | None, float]:
         p = self._path(name)
         if not p.is_file():
             return None, None, 0.0
@@ -52,7 +56,7 @@ class PyPICache:
         except Exception:
             return None, None, 0.0
 
-    def save(self, name: str, version: str, etag: Optional[str]) -> None:
+    def save(self, name: str, version: str, etag: str | None) -> None:
         p = self._path(name)
         payload = {"version": version, "etag": etag, "ts": time.time()}
         p.write_text(json.dumps(payload), encoding="utf-8")
@@ -71,15 +75,20 @@ class VersionChecker:
 
     PYPI_JSON = "https://pypi.org/pypi/{name}/json"
 
-    def __init__(self, requirements: list[Requirement] | None = None, *, ttl_seconds: int = 86400,
-                 concurrency: int = 8) -> None:
+    def __init__(
+        self,
+        requirements: list[Requirement] | None = None,
+        *,
+        ttl_seconds: int = 86400,
+        concurrency: int = 8,
+    ) -> None:
         self._requirements: list[Requirement] = requirements or []
         self.cache = PyPICache(ttl_seconds=ttl_seconds)
         # `concurrency` зарезервирован под будущий async-bulk, здесь не критичен
         self.concurrency = max(1, int(concurrency))
 
     # -------- compatibility method (used by tests to monkeypatch) --------
-    def get_latest_version(self, name: str) -> Optional[Version]:
+    def get_latest_version(self, name: str) -> Version | None:
         """
         Return latest version from PyPI for `name`, with ETag/TTL cache.
         Sync on purpose so tests can monkeypatch it easily.
@@ -115,8 +124,9 @@ class VersionChecker:
             return None
 
     # -------- declared --------
-    def check_declared(self, requirements: Iterable[Requirement] | None = None) -> tuple[
-        list[Outdated], list[Unpinned]]:
+    def check_declared(
+        self, requirements: Iterable[Requirement] | None = None
+    ) -> tuple[list[Outdated], list[Unpinned]]:
         reqs = list(requirements) if requirements is not None else list(self._requirements)
         outdated: list[Outdated] = []
         unpinned: list[Unpinned] = []
@@ -133,12 +143,9 @@ class VersionChecker:
                 spec = str(req.specifier) if str(req.specifier) else "*"
                 unpinned.append(Unpinned(name=req.name, spec=spec))
             else:
-                try:
+                with suppress(Exception):
                     pins[req.name] = parse_version(equals[-1].version)
-                except Exception:
-                    pass
 
-        # Если метод замокан — уважаем monkeypatch и вызываем его по одному
         use_monkeypatched = type(self).get_latest_version is not VersionChecker.get_latest_version
 
         for name, cur in pins.items():

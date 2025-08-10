@@ -18,7 +18,8 @@ def test_config_defaults(tmp_path: Path) -> None:
 
 
 def test_config_file_loading(tmp_path: Path) -> None:
-    (tmp_path / ".animadao.toml").write_text(dedent("""
+    (tmp_path / ".animadao.toml").write_text(
+        dedent("""
         [core]
         mode = "installed"
         src = ["src", "app"]
@@ -28,7 +29,9 @@ def test_config_file_loading(tmp_path: Path) -> None:
         [ignore]
         distributions = ["pip", "Setuptools"]
         imports = ["__future__"]
-    """).strip(), encoding="utf-8")
+    """).strip(),
+        encoding="utf-8",
+    )
 
     cfg = load_config(tmp_path)
     assert cfg.mode == "installed"
@@ -40,14 +43,17 @@ def test_config_file_loading(tmp_path: Path) -> None:
 
 
 def test_config_overrides(tmp_path: Path) -> None:
-    (tmp_path / ".animadao.toml").write_text(dedent("""
+    (tmp_path / ".animadao.toml").write_text(
+        dedent("""
         [core]
         mode = "declared"
         pypi_ttl_seconds = 3600
 
         [ignore]
         distributions = ["wheel"]
-    """).strip(), encoding="utf-8")
+    """).strip(),
+        encoding="utf-8",
+    )
 
     cfg = load_config(tmp_path).with_overrides(
         mode="installed",
