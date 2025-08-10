@@ -2,9 +2,9 @@ name: ci
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -57,7 +57,7 @@ jobs:
       - name: Ruff (format check)
         run: uv run ruff format --check .
 
-  anima:
+  animadao:
     runs-on: ubuntu-latest
     strategy: *py-strategy
     steps:
@@ -77,64 +77,16 @@ jobs:
           path: ~/.cache/uv
           key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
 
-      - name: Sync dev deps
-        run: uv sync --extra dev
-
-      # --- Reports (declared & installed) ---
-      - name: Generate AnimaDao reports
-        run: |
-          REPORT_DIR="${RUNNER_TEMP}/anima"
-          mkdir -p "$REPORT_DIR"
-          # Declared
-          uv run animadao report --project . --src . --format json --out "$REPORT_DIR/declared.json"
-          uv run animadao report --project . --src . --format md   --out "$REPORT_DIR/declared.md"
-          uv run animadao report --project . --src . --format html --out "$REPORT_DIR/declared.html"
-          # Installed
-          uv run animadao report --project . --src . --mode installed --format json --out "$REPORT_DIR/installed.json"
-          uv run animadao report --project . --src . --mode installed --format md   --out "$REPORT_DIR/installed.md"
-          uv run animadao report --project . --src . --mode installed --format html --out "$REPORT_DIR/installed.html"
-          echo "REPORT_DIR=$REPORT_DIR" >> "$GITHUB_ENV"
-
-      - name: Append AnimaDao report to Job Summary (Python ${{ matrix.python-version }})
-        if: always()
-        run: |
-          {
-            echo "## AnimaDao — declared (Python ${{ matrix.python-version }})"
-            echo
-            cat "$REPORT_DIR/declared.md"
-            echo
-            echo "<details><summary>Raw JSON</summary>"
-            echo
-            echo '```json'
-            cat "$REPORT_DIR/declared.json"
-            echo '```'
-            echo "</details>"
-            echo
-            echo "---"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload AnimaDao reports artifact
-        uses: actions/upload-artifact@v4
+      - name: AnimaDao (declared)
+        uses: Absolentia/animadao-action@v1
         with:
-          name: anima-reports-${{ matrix.python-version }}
-          path: ${{ env.REPORT_DIR }}
-          if-no-files-found: error
-          retention-days: 7
-
-      # --- Strict gates (can fail the job) ---
-      - name: AnimaDao gate (declared)
-        run: |
-          uv run animadao-pre-commit-gate \
-            --mode declared \
-            --fail-if-outdated \
-            --max-unused 0 \
-            --ignore pip --ignore setuptools --ignore wheel --ignore ruff
-
-      - name: AnimaDao gate (installed)
-        run: |
-          uv run animadao-pre-commit-gate \
-            --mode installed \
-            --fail-if-outdated
+          mode: declared
+          ignore: pip,setuptools,wheel,ruff
+          fail-if-outdated: "true"
+          max-unused: "0"
+          format: md
+          artifact-name: animadao-report-${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version }}
 
   test:
     runs-on: ubuntu-latest
