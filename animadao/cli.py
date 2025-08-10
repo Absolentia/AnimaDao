@@ -127,9 +127,11 @@ def unused_cmd(project: Path, src: Path | None, ignore: tuple[str, ...]) -> None
 )
 @click.option(
     "--src",
+    "srcs",
     type=click.Path(path_type=Path, exists=True),
+    multiple=True,
     default=None,
-    help="Source root to scan imports.",
+    help="Source roots to scan imports (can repeat).",
 )
 @click.option("--out", type=click.Path(path_type=Path), default=None, help="Path to write report.")
 @click.option("--mode", type=click.Choice(["declared", "installed"]), default=None, help="Report mode.")
@@ -145,7 +147,7 @@ def unused_cmd(project: Path, src: Path | None, ignore: tuple[str, ...]) -> None
 @click.option("--pypi-concurrency", type=int, default=None, help="Parallel HTTP requests to PyPI (default 8).")
 def report_cmd(
     project: Path,
-    src: Path | None,
+    srcs: tuple[Path, ...],
     out: Path | None,
     mode: str | None,
     ignore: tuple[str, ...],
@@ -155,7 +157,7 @@ def report_cmd(
 ) -> None:
     cfg = load_config(project).with_overrides(
         mode=mode,
-        src=[str(src)] if src else None,
+        src=[str(p) for p in srcs] if srcs else None,
         ignore=ignore,
         ttl=pypi_ttl,
         conc=pypi_concurrency,
@@ -163,7 +165,7 @@ def report_cmd(
     try:
         path = generate_report(
             project_root=project,
-            src_root=src,
+            src_roots=list(srcs) if srcs else None,
             out_path=out,
             mode=cfg.mode,
             ignore=cfg.ignore_distributions or set(),

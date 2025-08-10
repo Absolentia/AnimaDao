@@ -85,15 +85,27 @@ def generate_report(
     src_root: Path | None = None,
     out_path: Path | None = None,
     *,
+    src_roots: list[Path] | None = None,
     mode: str = "declared",  # declared | installed
-    ignore: set[str] | None = None,  # игнор пакетов по имени (case-insensitive)
+    ignore: set[str] | None = None,  # ignore package by name (case-insensitive)
     ttl_seconds: int = 86400,
     concurrency: int = 8,
     output_format: str = "json",  # json | md | html
 ) -> Path:
     """
-    Генерирует отчёт (json/md/html) по выбранному режиму.
+    Generate a report (json/md/html) by selected mode.
     """
+    roots: list[Path]
+    if src_roots:
+        roots = list(src_roots)
+    elif src_root:
+        roots = [src_root]
+    else:
+        roots = [project_root]
+
+    imports: set[str] = set()
+    for r in roots:
+        imports |= find_top_level_imports(r)
     if not (project_root / "pyproject.toml").is_file() and not (project_root / "requirements.txt").is_file():
         raise FileNotFoundError(f"No pyproject.toml or requirements.txt in: {project_root}")
 
