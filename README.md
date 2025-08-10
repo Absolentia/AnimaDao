@@ -277,4 +277,44 @@ uv run pytest -vvvv
 
 Please keep type hints (3.10+), docstrings and comments in English, and add tests for new loaders/edge cases.
 
-## License
+## pre-commit
+
+1) Add AnimaDao hooks to `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+  - repo: https://github.com/Absolentia/AnimaDao
+    rev: v0.1.2        # <-- use the latest tag
+    hooks:
+      - id: animadao-check
+        args: [--ignore, pip, --ignore, setuptools]
+        files: '^(pyproject.toml|requirements.*txt|.*\.py)$'
+      - id: animadao-report
+        stages: [manual]  # optional: run on-demand via `pre-commit run -a animadao-report`
+```
+
+2) Install and run:
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run -a
+```
+
+**Policy examples:**
+- Fail on outdated pins only:
+  ```yaml
+  - id: animadao-check
+    args: [--mode, declared, --fail-if-outdated]
+  ```
+- Strict mode (declared): no outdated, no unpinned, no unused:
+  ```yaml
+  - id: animadao-check
+    args: [--mode, declared, --fail-if-outdated, --fail-if-unpinned, --max-unused, "0"]
+  ```
+- Installed mode (CI on lockstep env):
+  ```yaml
+  - id: animadao-check-installed
+    args: [--fail-if-outdated]
+  ```
+```
