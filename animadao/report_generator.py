@@ -5,31 +5,16 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
-from animadao.dependency_checker import load_declared_deps, guess_unused
-from animadao.import_scanner import find_top_level_imports
-from animadao.version_checker import VersionChecker
+from .dependency_checker import load_declared_deps_any, guess_unused
+from .import_scanner import find_top_level_imports
+from .version_checker import VersionChecker
 
 
 def generate_report(project_root: Path, src_root: Optional[Path] = None, out_path: Optional[Path] = None) -> Path:
-    """
-    Produce a JSON report with:
-      - outdated pinned deps
-      - unpinned deps
-      - unused deps (heuristic by import scan)
+    if not (project_root / "pyproject.toml").is_file() and not (project_root / "requirements.txt").is_file():
+        raise FileNotFoundError(f"No pyproject.toml or requirements.txt in: {project_root}")
 
-    Args:
-        project_root: path containing pyproject.toml
-        src_root: source root to scan imports; defaults to project_root if None
-        out_path: where to write JSON; defaults to project_root/'report.json'
-
-    Returns:
-        Path to written JSON file.
-    """
-    pyproject = project_root / "pyproject.toml"
-    if not pyproject.is_file():
-        raise FileNotFoundError(f"pyproject.toml not found at: {pyproject}")
-
-    declared = load_declared_deps(pyproject).requirements
+    declared = load_declared_deps_any(project_root).requirements
 
     src = src_root or project_root
     imports = find_top_level_imports(src)
