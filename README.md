@@ -13,9 +13,91 @@ Works with **uv** and supports three declaration styles.
 
 ---
 
-## Action
+## One-liner GitHub Action
 
-https://github.com/Absolentia/animadao-action
+Use the official composite Action to run AnimaDao in one step.  
+It writes a Markdown report to the **Job Summary**, optionally uploads artifacts, and can **fail** the job on policy
+violations.
+
+**Repo:** <https://github.com/Absolentia/animadao-action>  
+**Recommended pin:** `uses: Absolentia/animadao-action@v1` (moving major tag).  
+For full reproducibility you can pin a concrete version, e.g. `@v1.0.3`.
+
+### Minimal usage (declared mode)
+
+```yaml
+- name: AnimaDao (declared)
+  uses: Absolentia/animadao-action@v1
+  with:
+    mode: declared
+    # One root is enough for most repos; you can also pass multiple roots (e.g. "anima_dao tests")
+    src: "."
+    ignore: pip,setuptools,wheel,ruff
+    fail-if-outdated: "true"
+    max-unused: "0"
+    format: md
+    artifact-name: anima-report-${{ matrix.python-version }}
+    python-version: ${{ matrix.python-version }}
+```
+
+**Installed mode** (checks currently installed packages; no “unused” check):
+
+```yaml
+- name: AnimaDao (installed)
+  uses: Absolentia/animadao-action@v1
+  with:
+    mode: installed
+    fail-if-outdated: "true"
+    ignore: pip,setuptools,wheel
+    python-version: ${{ matrix.python-version }}
+```
+
+### Full example job (with cache + matrix)
+
+```yaml
+jobs:
+  anima:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.10","3.11","3.12","3.13" ]
+    steps:
+      - uses: actions/checkout@v4
+
+      # Speed up uv by caching
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
+
+      - name: AnimaDao (declared)
+        uses: Absolentia/animadao-action@v1
+        with:
+          mode: declared
+          src: "."                                  # or: "anima_dao tests"
+          ignore: pip,setuptools,wheel,ruff
+          fail-if-outdated: "true"
+          max-unused: "0"
+          format: md
+          artifact-name: anima-report-${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version }}
+```
+
+### Notes & tips
+
+- **Artifacts in matrix:** artifact names must be **unique** per shard (use
+  `anima-report-${{ matrix.python-version }}`), or merge them later to avoid 409 conflicts.
+- **Report visibility:** the Action appends the Markdown report to the **Job Summary**; HTML/JSON are attached as
+  artifacts when `upload-artifact: "true"`.
+- **Policies:** tune to your process:
+    - allow a small number of unused deps: `max-unused: "1"`
+    - ignore dev tools (e.g., `ruff`, `black`, `mypy`, `build`, `twine`) via `ignore`.
+- **Multiple source roots:** pass them space-separated in `src` (e.g., `src: "anima_dao tests"`). The Action expands
+  this into repeated `--src` flags for the report.  
+  The gate runs against the project root and policy checks (works out of the box).
+- **Pre-release Python:** if you run on RC versions (e.g., 3.14-rc), set `allow-prereleases: true` on your own
+  `actions/setup-python` step (outside of this Action).
 
 ## Features
 
