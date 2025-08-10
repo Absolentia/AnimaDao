@@ -39,6 +39,7 @@ Issues = "https://github.com/Absolentia/AnimaDao/issues"
 
 [project.scripts]
 animadao = "animadao.cli:cli"
+animadao-pre-commit-gate = "animadao.precommit_gate:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["animadao"]
