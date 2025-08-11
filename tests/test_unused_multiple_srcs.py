@@ -10,7 +10,7 @@ from click.testing import CliRunner
 def test_unused_multiple_srcs_union(tmp_path: Path) -> None:
     # pyproject с двумя пинами
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname="demo"\nversion="0.0.0"\n' 'dependencies=["requests==2.31.0","rich==13.7.0"]\n',
+        '[project]\nname="demo"\nversion="0.0.0"\ndependencies=["requests==2.31.0","rich==13.7.0"]\n',
         encoding="utf-8",
     )
 

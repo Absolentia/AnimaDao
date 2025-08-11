@@ -109,7 +109,7 @@ def check_cmd(
     type=click.Path(path_type=Path, exists=True, file_okay=False),
     multiple=True,
     default=None,
-    help="Source roots to scan imports (can repeat). " "If omitted, the project root is scanned.",
+    help="Source roots to scan imports (can repeat). If omitted, the project root is scanned.",
 )
 @click.option("--ignore", multiple=True, help="Ignore packages (can repeat).")
 def unused_cmd(project: Path, srcs: tuple[Path, ...], ignore: tuple[str, ...]) -> None:
