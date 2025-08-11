@@ -1,6 +1,6 @@
 [core]
 mode = "declared"          # declared | installed
-src = ["src", "app"]
+src = ["animadao", "tests"]
 
 # PyPI cache / concurrency
 pypi_ttl_seconds = 86400
