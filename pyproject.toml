@@ -1,6 +1,6 @@
 [project]
 name = "anima-dao"
-version = "0.1.81"
+version = "0.2.0"
 description = "Confucian-spirited dependency health checker for Python projects using pyproject + uv"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -27,6 +27,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+native = ["anima-core>=0.1.1"]
 dev = [
   "pytest>=8.4.1",
   "pytest-asyncio>=1.1.0",

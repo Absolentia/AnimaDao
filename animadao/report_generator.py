@@ -8,7 +8,7 @@ from pathlib import Path
 from packaging.requirements import Requirement
 
 from animadao.dependency_checker import guess_unused, load_declared_deps_any
-from animadao.import_scanner import find_top_level_imports
+from animadao.native import scan_imports
 from animadao.version_checker import VersionChecker
 
 
@@ -103,36 +103,34 @@ def generate_report(
     else:
         roots = [project_root]
 
-    imports: set[str] = set()
-    for r in roots:
-        imports |= find_top_level_imports(r)
+    # Collect imports across all roots using Rust fast-path (falls back to Python internally)
+    imports: set[str] = set(scan_imports([str(p) for p in roots]))
     if not (project_root / "pyproject.toml").is_file() and not (project_root / "requirements.txt").is_file():
         raise FileNotFoundError(f"No pyproject.toml or requirements.txt in: {project_root}")
 
     ignore = {s.lower() for s in (ignore or set())}
 
     declared_reqs: list[Requirement] = []
-    imports: set[str] = set()
 
     if mode == "declared":
         declared_reqs = load_declared_deps_any(project_root).requirements
-        imports = find_top_level_imports(src_root or project_root)
+        imports = set(scan_imports([str(src_root or project_root)]))
         # Version check on declared
         checker = VersionChecker(ttl_seconds=ttl_seconds, concurrency=concurrency)
         outdated, unpinned = checker.check_declared(declared_reqs)
     elif mode == "installed":
-        # соберём установленные пакеты
+        # collect the installed packages
         from importlib import metadata as im
 
         installed = {d.metadata["Name"]: d.version for d in im.distributions()}
         checker = VersionChecker(ttl_seconds=ttl_seconds, concurrency=concurrency)
         outdated, unpinned = checker.check_installed(installed)
         # для installed импорт-скан имеет меньший смысл, но оставим для консистентности
-        imports = find_top_level_imports(src_root or project_root)
+        imports = set(scan_imports([str(src_root or project_root)]))
     else:
         raise ValueError("mode must be 'declared' or 'installed'")
 
-    # Игнорируем пакеты в отчёте
+    # Ignore packages in the report
     outdated = [o for o in outdated if o.name.lower() not in ignore]
     unpinned = [u for u in unpinned if u.name.lower() not in ignore]
 
@@ -155,7 +153,7 @@ def generate_report(
         "mode": mode,
     }
 
-    # Пишем файл
+    # write to file
     out = out_path or (project_root / ("report." + ("json" if output_format == "json" else output_format)))
     if output_format == "json":
         out.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
