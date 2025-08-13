@@ -10,7 +10,7 @@ from packaging.requirements import Requirement
 
 from animadao.config import load_config
 from animadao.dependency_checker import guess_unused, load_declared_deps_any
-from animadao.import_scanner import find_top_level_imports
+from animadao.native import scan_imports
 from animadao.report_generator import generate_report
 from animadao.version_checker import VersionChecker
 
@@ -40,7 +40,7 @@ def cli() -> None: ...
 )
 def scan_cmd(project: Path, src: Path | None) -> None:
     deps: list[Requirement] = load_declared_deps_any(project).requirements
-    imports = find_top_level_imports(src or project)
+    imports = set(scan_imports([str(src or project)]))
     click.echo(
         json.dumps(
             {
@@ -125,9 +125,7 @@ def unused_cmd(project: Path, srcs: tuple[Path, ...], ignore: tuple[str, ...]) -
     roots: list[Path] = list(srcs) if srcs else [project]
 
     # Collect imports from all roots
-    imports: set[str] = set()
-    for root in roots:
-        imports |= find_top_level_imports(root)
+    imports = set(scan_imports([str(p) for p in roots]))
 
     # Apply ignore list and keep stable ordering
     ig = {s.lower() for s in ignore}

@@ -7,7 +7,7 @@ import click
 
 from animadao.config import load_config
 from animadao.dependency_checker import guess_unused, load_declared_deps_any
-from animadao.import_scanner import find_top_level_imports
+from animadao.native import scan_imports
 from animadao.version_checker import VersionChecker
 
 
@@ -74,10 +74,8 @@ def main(
         declared = load_declared_deps_any(project).requirements
         declared_count = len(declared)
 
-        # объединяем импорты из всех корней
-        imports: set[str] = set()
-        for r in roots:
-            imports |= find_top_level_imports(r)
+        # combine imports from all roots
+        imports = set(scan_imports([str(r) for r in roots]))
         imports_found = len(imports)
 
         outdated, unpinned = checker.check_declared(declared)
