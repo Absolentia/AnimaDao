@@ -3,6 +3,22 @@ revision = 3
 requires-python = ">=3.11"
 
 [[package]]
+name = "anima-core"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a4/40/23b0346306b3738628ba48807c65305b1ba971065a84337ebf99f4e09413/anima_core-0.1.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:0d1492b3c5d44abda79b128a982d9261cbc28e6ae1ad386d83226a7e115b68d5", size = 271879, upload-time = "2025-08-13T10:05:37.498Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/50/e3a0d49bbe1992b74a805c6d3673ebb8ca2c33679b721abe1c2f66867473/anima_core-0.1.1-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:3a9c3713790614f58f57a7f1418937b866dfbf8ff92021a864c2fae7f2c326df", size = 321094, upload-time = "2025-08-13T10:05:38.927Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/45/30d84887c1400d87498666bba5cbdfd8e5aa4cdfd8993d91da0f0d68af32/anima_core-0.1.1-cp311-cp311-win_amd64.whl", hash = "sha256:286e96144fbde607284135999350a99e2eb24a5baaa109c121301244f38c2a39", size = 169948, upload-time = "2025-08-13T10:05:40.16Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/3b/fca55556cf5ade157d705ac9093f6ee0f7d3cae15a92ebb0d5a245239b37/anima_core-0.1.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:b7a092b8111db504bdf2279ef1fabe5545d3b7d87f6b8b9a5b7b888fe358ffb9", size = 268911, upload-time = "2025-08-13T10:05:41.099Z" },
+    { url = "https://files.pythonhosted.org/packages/22/c7/4e43f2267a939470a9d483232b7cd5295852c8bf2942ab0be45d86b5c7b3/anima_core-0.1.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:71c2d060e6539543ce401d5930584ee875138438972e8fb5b846af19b4910406", size = 319925, upload-time = "2025-08-13T10:05:42.477Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/38/3135d8054cfe4740a8c4323fcd47ff64006cb24df9e6384ce2bbe17e22fc/anima_core-0.1.1-cp312-cp312-win_amd64.whl", hash = "sha256:7d68b8561f295f23d3a98c1b78f8f6c36ebf9727c5970587fca091bdee232844", size = 169661, upload-time = "2025-08-13T10:05:43.808Z" },
+    { url = "https://files.pythonhosted.org/packages/52/38/c4a10ac0f0b3d3e8d155485730afd8d18bc10dd1bb2b61bd1f278c563f13/anima_core-0.1.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:1ae97c05fddfeaaa5520c77ac754f562fdb17e9d932884173c0dd8132d8fa3b4", size = 268832, upload-time = "2025-08-13T10:05:44.996Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/cd/09f240f67fcaf78a8c95b8e31ca3800fab12aa3fed1666cc75531f16fbb2/anima_core-0.1.1-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:1a34bd0e9c456a2fd1e38a55686ea403ff5284600ddbae8ef9df9147b6b66ac8", size = 319783, upload-time = "2025-08-13T10:05:46.365Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/0c/4aa66b0592171e074a7aee96e6b31e2cdf5e98e364887ccd0d5dcf4eeded/anima_core-0.1.1-cp313-cp313-win_amd64.whl", hash = "sha256:a544018071ec20929d2ef13313b4fef606c0a4adf903f67378282898f8c31560", size = 169553, upload-time = "2025-08-13T10:05:47.379Z" },
+]
+
+[[package]]
 name = "anima-dao"
 version = "0.1.81"
 source = { editable = "." }
@@ -20,9 +36,13 @@ dev = [
     { name = "ruff" },
     { name = "twine" },
 ]
+native = [
+    { name = "anima-core" },
+]
 
 [package.metadata]
 requires-dist = [
+    { name = "anima-core", marker = "extra == 'native'", specifier = ">=0.1.1" },
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.2.1" },
     { name = "click", specifier = ">=8.2.1" },
     { name = "httpx", specifier = ">=0.28.1" },
@@ -33,7 +53,7 @@ requires-dist = [
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.1" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=5.0.0" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["native", "dev"]
 
 [[package]]
 name = "anyio"
